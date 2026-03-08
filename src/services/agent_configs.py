@@ -1,0 +1,66 @@
+import json
+import httpx
+from pydantic import BaseModel
+from models.redis_setup import redis_client
+import logging 
+
+logger = logging.getLogger("uvicorn.error")
+
+class AgentConfig(BaseModel):
+    system_prompt: str
+    model_type: str
+    temperature: float
+    kb_id: str | None = None # Knowledge Base ID
+
+async def get_agent_config(agent_id: str) -> AgentConfig:
+    """Fetches config from Redis, or falls back to the Core API if missing."""
+    cache_key = f"agent_config:{agent_id}"
+    
+    # 1. Try Redis First
+    cached_data = await redis_client.get(cache_key)
+    if cached_data:
+        logger.info(f"[Cache Hit] Loaded config for {agent_id} from Redis.")
+        return AgentConfig(**json.loads(cached_data))
+    
+    # 2. Cache Miss: Talk to the Core Platform API
+    logger.info(f"[Cache Miss] Fetching config for {agent_id} from Core API...")
+    async with httpx.AsyncClient() as client:
+        # Note: In reality, replace this URL with your actual Core API endpoint
+        # response = await client.get(f"{settings.core_api_url}/api/agents/{agent_id}")
+        
+
+        # If your API was ready, you'd do: mock_api_data = response.json()
+        # --- MOCKING THE CORE API RESPONSE ---
+        # This represents what the COMPANY typed into your dashboard
+        company_base_prompt = "Your name: Alharth, age:24 and you are a customer support employee in a tech company called Alhaj Hussein company. If the user ask any question you didn't have info to answer it, just say 'Sorry, I don't know'. Very important note always answer in the same language that the user talk to you. Be polite and concise."
+        
+        # Change this to None to test an agent without a Knowledge Base!
+        linked_kb_id = None
+        
+        # 3. DYNAMIC PROMPT ASSEMBLY
+        final_system_prompt = company_base_prompt
+        
+        if linked_kb_id:
+            # If they attached a bucket, we silently inject our platform's strict RAG rules
+            rag_rules = (
+                "\n\n--- STRICT KNOWLEDGE BASE SEARCH RULES ---\n"
+                "1. Always use the `search_company_knowledge_base` tool to find information if you need data before answering.\n"
+                "2. If the tool returns data that does NOT answer the user's question, call the tool again using DIFFERENT search keywords. You can try multiple times.\n"
+                "3. PARTIAL ANSWERS: If the user asks multiple questions and you can only find answers to some of them, answer what you know. For the missing parts, explicitly state: 'I don't have information on that specific part.'\n"
+                "4. TOTAL FAILURE: If you cannot find ANY answers to ANY part of the user's prompt, output this exact phrase and nothing else: 'I'm sorry, I don't have information on that.'"
+            )
+            final_system_prompt += rag_rules
+
+        mock_api_data = {
+            "system_prompt": final_system_prompt,
+            "model_type": "gemini-2.5-pro",
+            "temperature": 0.1,
+            "kb_id": linked_kb_id
+        }
+
+        config = AgentConfig(**mock_api_data)
+        
+        # 3. Save to Redis with a Time-To-Live (TTL) of 5 minutes (300 seconds)
+        await redis_client.setex(cache_key, 300, config.model_dump_json())
+        return config
+    
