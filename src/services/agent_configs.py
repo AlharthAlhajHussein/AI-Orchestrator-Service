@@ -10,7 +10,9 @@ class AgentConfig(BaseModel):
     system_prompt: str
     model_type: str
     temperature: float
+    company_id: str
     kb_id: str | None = None # Knowledge Base ID
+    
 
 async def get_agent_config(agent_id: str) -> AgentConfig:
     """Fetches config from Redis, or falls back to the Core API if missing."""
@@ -32,10 +34,14 @@ async def get_agent_config(agent_id: str) -> AgentConfig:
         # If your API was ready, you'd do: mock_api_data = response.json()
         # --- MOCKING THE CORE API RESPONSE ---
         # This represents what the COMPANY typed into your dashboard
-        company_base_prompt = "Your name: Alharth, age:24 and you are a customer support employee in a tech company called Alhaj Hussein company. If the user ask any question you didn't have info to answer it, just say 'Sorry, I don't know'. Very important note always answer in the same language that the user talk to you. Be polite and concise."
-        
+        company_base_prompt = """
+            You are the official Customer Support AI Agent for "TechCorp 99". You are interacting with customers via WhatsApp and Telegram.
+            Your goal is to provide helpful, accurate, and concise answers to customer questions and in the same language as the user asked you.
+        """
+        # company_base_prompt = "أنت أسمك أحمد وانت مسؤال دعم العملاء في شركة الحاج حسين. إذا سأل المستخدم أي سؤال ليس لديك معلومات كافية للإجابة عليه، فقط قل 'عذرًا، لا أعرف'. ملاحظة مهمة جدًا: دائمًا أجب بنفس اللغة التي يتحدث بها المستخدم. كن مهذبًا وموجزًا."
+        company_id = "TechCorp_99"
         # Change this to None to test an agent without a Knowledge Base!
-        linked_kb_id = None
+        linked_kb_id = "8a3a8f04-3191-4ce1-8824-0d250fa3a817"
         
         # 3. DYNAMIC PROMPT ASSEMBLY
         final_system_prompt = company_base_prompt
@@ -44,7 +50,7 @@ async def get_agent_config(agent_id: str) -> AgentConfig:
             # If they attached a bucket, we silently inject our platform's strict RAG rules
             rag_rules = (
                 "\n\n--- STRICT KNOWLEDGE BASE SEARCH RULES ---\n"
-                "1. Always use the `search_company_knowledge_base` tool to find information if you need data before answering.\n"
+                "1. Always use the `search_company_knowledge_base` tool to find information if you need data before answering, also check the previous chat history for getting data.\n"
                 "2. If the tool returns data that does NOT answer the user's question, call the tool again using DIFFERENT search keywords. You can try multiple times.\n"
                 "3. PARTIAL ANSWERS: If the user asks multiple questions and you can only find answers to some of them, answer what you know. For the missing parts, explicitly state: 'I don't have information on that specific part.'\n"
                 "4. TOTAL FAILURE: If you cannot find ANY answers to ANY part of the user's prompt, output this exact phrase and nothing else: 'I'm sorry, I don't have information on that.'"
@@ -55,6 +61,7 @@ async def get_agent_config(agent_id: str) -> AgentConfig:
             "system_prompt": final_system_prompt,
             "model_type": "gemini-2.5-pro",
             "temperature": 0.1,
+            "company_id": company_id,
             "kb_id": linked_kb_id
         }
 

@@ -72,7 +72,7 @@ async def process_message(incoming_msg: IncomingMessage) -> OutgoingMessage:
         )
         
         logger.info(f"*************************************************************")
-        logger.info(f"Messages: {[{'role': m.role, 'text': m.parts[0].text} for m in messages]}")
+        logger.info(f"Messages: {[part.text for msg in messages for part in msg.parts]}")
         logger.info(f"*************************************************************")
         
         if response.function_calls:
@@ -80,7 +80,7 @@ async def process_message(incoming_msg: IncomingMessage) -> OutgoingMessage:
             if function_call.name == "search_company_knowledge_base":
                 search_query = function_call.args["query"]
                 
-                rag_result = await search_company_knowledge_base(search_query, config.kb_id)
+                rag_result = await search_company_knowledge_base(config.company_id, config.kb_id, search_query)
                 
                 messages.append(types.Content(role="model", parts=[types.Part.from_function_call(
                     name=function_call.name, args=function_call.args

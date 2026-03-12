@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     
     # API URLs to other services (CORE API, RAG API) 
     core_api_url: str = Field(default="http://localhost:8001", validation_alias="CORE_API_URL")
-    rag_api_url: str = Field(default="http://localhost:8002", validation_alias="RAG_API_URL")
+    rag_api_url: str = Field(default="http://127.0.0.1:8000", validation_alias="RAG_API_URL")
     
     # LLM settings
     gemini_api_key: Optional[str] = None
