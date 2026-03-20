@@ -23,15 +23,14 @@ class Settings(BaseSettings):
     db_user: Optional[str] = None
     db_password: Optional[str] = None
     
-    
     # Redis settings
     redis_password: Optional[str] = None
     redis_host: str = "localhost"
     redis_port: int = 6379
     
     # API URLs to other services (CORE API, RAG API) 
-    core_api_url: str = Field(default="http://localhost:8001", validation_alias="CORE_API_URL")
-    rag_api_url: str = Field(default="http://127.0.0.1:8000", validation_alias="RAG_API_URL")
+    core_api_url: str = "http://localhost:8003"
+    rag_api_url: str = "https://rag-engine-api-173690049028.europe-west4.run.app"
     
     # LLM settings
     gemini_api_key: Optional[str] = None
@@ -39,7 +38,7 @@ class Settings(BaseSettings):
     chat_history_limit: int = 10
     
     # Google Cloud settings
-    gcp_project_id: str = Field(default="pdf-ocr-extractor-488523", validation_alias="GCP_PROJECT_ID")
+    gcp_project_id: str = "agents-platform-490417"
     
     class Config:
         env_file = ENV_PATH

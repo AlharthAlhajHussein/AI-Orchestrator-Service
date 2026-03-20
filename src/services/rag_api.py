@@ -17,7 +17,7 @@ async def search_company_knowledge_base(company_id: str, kb_id: str, query: str)
     
     # 2. EDGE CASE: Enforce strict timeouts. 
     # If the RAG DB is locked, we don't want the WhatsApp bot to hang forever.
-    timeout = httpx.Timeout(10.0, connect=5.0)
+    timeout = httpx.Timeout(20.0, connect=5.0)
     
     async with httpx.AsyncClient(timeout=timeout) as client:
         try:

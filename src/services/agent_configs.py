@@ -35,13 +35,13 @@ async def get_agent_config(agent_id: str) -> AgentConfig:
         # --- MOCKING THE CORE API RESPONSE ---
         # This represents what the COMPANY typed into your dashboard
         company_base_prompt = """
-            You are the official Customer Support AI Agent for "TechCorp 99". You are interacting with customers via WhatsApp and Telegram.
+            You are the official Customer Support AI Agent for "Alhaj Hussein". You are interacting with customers via WhatsApp and Telegram.
             Your goal is to provide helpful, accurate, and concise answers to customer questions and in the same language as the user asked you.
         """
         # company_base_prompt = "أنت أسمك أحمد وانت مسؤال دعم العملاء في شركة الحاج حسين. إذا سأل المستخدم أي سؤال ليس لديك معلومات كافية للإجابة عليه، فقط قل 'عذرًا، لا أعرف'. ملاحظة مهمة جدًا: دائمًا أجب بنفس اللغة التي يتحدث بها المستخدم. كن مهذبًا وموجزًا."
-        company_id = "TechCorp_99"
+        company_id = "Alhaj_Hussein"
         # Change this to None to test an agent without a Knowledge Base!
-        linked_kb_id = "8a3a8f04-3191-4ce1-8824-0d250fa3a817"
+        linked_kb_id = "40509a16-41ff-4b10-90c8-cac9bb07554f"
         
         # 3. DYNAMIC PROMPT ASSEMBLY
         final_system_prompt = company_base_prompt
