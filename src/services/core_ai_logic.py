@@ -26,7 +26,7 @@ async def process_message(incoming_msg: IncomingMessage) -> OutgoingMessage:
             db_session,
             incoming_msg.destination_agent_id,
             incoming_msg.platform,
-            incoming_msg.sender_id,
+            incoming_msg.sender_info,
             limit=settings.chat_history_limit
         )
     logger.info(f"[DB] Retrieved {len(history_turns)} from DB.")
@@ -114,7 +114,7 @@ async def process_message(incoming_msg: IncomingMessage) -> OutgoingMessage:
             db_session, 
             incoming_msg.destination_agent_id,
             incoming_msg.platform, 
-            incoming_msg.sender_id, 
+            incoming_msg.sender_info, 
             incoming_msg.text, 
             final_response_text,
             incoming_msg.timestamp
@@ -122,7 +122,7 @@ async def process_message(incoming_msg: IncomingMessage) -> OutgoingMessage:
 
     return OutgoingMessage(
         platform=incoming_msg.platform,
-        sender_id=incoming_msg.sender_id,
+        sender_info=incoming_msg.sender_info,
         destination_agent_id=incoming_msg.destination_agent_id,
         response_text=final_response_text
     )

@@ -5,16 +5,16 @@ import httpx
 from models.in_out_messages import IncomingMessage, PlatformType
 
 async def simulate_pubsub_push():
-    url = "https://ai-orchestrator-api-173690049028.europe-west4.run.app/pubsub/push"
-    
+    # url = "https://ai-orchestrator-api-173690049028.europe-west4.run.app/pubsub/push"
+    url = "http://localhost:5001/pubsub/push"
     print("--- Simulating GCP Pub/Sub Push ---")
 
     # 1. Create our raw IncomingMessage
     raw_message = IncomingMessage(
         platform=PlatformType.TELEGRAM,
-        sender_id="AlharthAlhajHussein",
+        sender_info={"id": 12345, "username":"AlharthAlhajHussein"},
         destination_agent_id="agent-1",
-        text="ما هي ساعات العمل لديكم؟"
+        text="ما هي ساعات العمل مواعيد العمل الرسمية لشركتكم؟"
     )
 
     # 2. Serialize to JSON string

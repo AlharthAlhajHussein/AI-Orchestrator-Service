@@ -15,8 +15,6 @@ pubsub_router = APIRouter(
     tags=["Pub/Sub"]
 )
 
-
-
 @pubsub_router.post("/push")
 async def handle_pubsub_push(request: PubSubPushRequest):
     """Receives Push messages from GCP Pub/Sub."""
@@ -28,7 +26,7 @@ async def handle_pubsub_push(request: PubSubPushRequest):
         
         # 2. Validate using Pydantic
         incoming_msg = IncomingMessage(**payload_dict)
-        logger.info(f"\n[Processing] Message from {incoming_msg.sender_id}: {incoming_msg.text}")
+        logger.info(f"\n[Processing] Message from {incoming_msg.sender_info}: {incoming_msg.text}")
         
         # 3. Process the AI Logic
         outgoing_msg = await process_message(incoming_msg)

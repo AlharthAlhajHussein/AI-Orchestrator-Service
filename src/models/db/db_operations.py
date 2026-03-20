@@ -8,7 +8,7 @@ async def save_chat_turn(
     session: AsyncSession, 
     agent_id: str, 
     platform: str, 
-    sender_id: str, 
+    sender_info: dict, 
     user_message: str, 
     ai_response: str, 
     user_message_timestamp: datetime
@@ -17,7 +17,7 @@ async def save_chat_turn(
     new_turn = ChatTurn(
         agent_id=agent_id,
         platform=platform, 
-        sender_id=sender_id,
+        sender_id=sender_info["username"],
         user_message=user_message,
         ai_response=ai_response,
         user_message_timestamp=user_message_timestamp
@@ -31,7 +31,7 @@ async def get_recent_history(
     session: AsyncSession, 
     agent_id: str, 
     platform: str, 
-    sender_id: str, 
+    sender_info: dict, 
     limit: int = 10
 ) -> list[ChatTurn]:
     """Fetches the last N messages, utilizing the pre-sorted composite index."""
@@ -40,7 +40,7 @@ async def get_recent_history(
         .where(
             ChatTurn.agent_id == agent_id, 
             ChatTurn.platform == platform, 
-            ChatTurn.sender_id == sender_id
+            ChatTurn.sender_id == sender_info["username"]
         )\
         .order_by(ChatTurn.timestamp.desc())\
         .limit(limit)
