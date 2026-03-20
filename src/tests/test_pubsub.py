@@ -1,21 +1,20 @@
 # test_pubsub.py
 import asyncio
 import base64
-import json
 import httpx
 from models.in_out_messages import IncomingMessage, PlatformType
 
 async def simulate_pubsub_push():
-    url = "http://127.0.0.1:8000/pubsub/push"
+    url = "https://ai-orchestrator-api-173690049028.europe-west4.run.app/pubsub/push"
     
     print("--- Simulating GCP Pub/Sub Push ---")
 
     # 1. Create our raw IncomingMessage
     raw_message = IncomingMessage(
-        platform=PlatformType.WHATSAPP,
-        sender_id="+123456789",
+        platform=PlatformType.TELEGRAM,
+        sender_id="AlharthAlhajHussein",
         destination_agent_id="agent-1",
-        text="Immmm, can you tell me a joke?"
+        text="ما هي ساعات العمل لديكم؟"
     )
 
     # 2. Serialize to JSON string
@@ -35,7 +34,7 @@ async def simulate_pubsub_push():
 
     # 5. Fire the HTTP POST request to your local FastAPI server
     print(f"Sending push request to {url}...")
-    async with httpx.AsyncClient(timeout=10.0) as client:
+    async with httpx.AsyncClient(timeout=15.0) as client:
         response = await client.post(url, json=pubsub_envelope)
         
         print(f"Response Status Code: {response.status_code}")
