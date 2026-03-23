@@ -12,12 +12,13 @@ async def run_db_test():
     # Open a database session
     async with SessionLocal() as session:
         print("1. Saving mock conversations...")
-        await save_chat_turn(session, agent, user, "Hi, I need help.", "Hello! How can I assist you today?", datetime.now(timezone.utc))
-        await save_chat_turn(session, agent, user, "What are your hours?", "We are open 24/7.", datetime.now(timezone.utc))
-        await save_chat_turn(session, agent, user, "Great, thanks.", "You're welcome!", datetime.now(timezone.utc))
+        sender_info = {"username": user}
+        await save_chat_turn(session, agent, "whatsapp", sender_info, "Hi, I need help.", "Hello! How can I assist you today?", datetime.now(timezone.utc))
+        await save_chat_turn(session, agent, "whatsapp", sender_info, "What are your hours?", "We are open 24/7.", datetime.now(timezone.utc))
+        await save_chat_turn(session, agent, "whatsapp", sender_info, "Great, thanks.", "You're welcome!", datetime.now(timezone.utc))
 
         print("\n2. Fetching recent history (Limit 2)...")
-        history = await get_recent_history(session, agent, user, limit=2)
+        history = await get_recent_history(session, agent, "whatsapp", sender_info, limit=2)
         
         for turn in history:
             print(f"User: {turn.user_message}")

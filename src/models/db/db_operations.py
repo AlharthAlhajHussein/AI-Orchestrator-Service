@@ -2,6 +2,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from models.db.chat import ChatTurn
+import uuid
 import datetime
 
 async def save_chat_turn(
@@ -9,9 +10,12 @@ async def save_chat_turn(
     agent_id: str, 
     platform: str, 
     sender_info: dict, 
-    user_message: str, 
+    user_message: str | None, 
     ai_response: str, 
-    user_message_timestamp: datetime
+    user_message_timestamp: datetime,
+    message_type: str = "text",
+    media_url: str | None = None,
+    media_summary: str | None = None
 ) -> ChatTurn:
     """Saves a single turn of conversation to the database."""
     new_turn = ChatTurn(
@@ -20,7 +24,10 @@ async def save_chat_turn(
         sender_id=sender_info["username"],
         user_message=user_message,
         ai_response=ai_response,
-        user_message_timestamp=user_message_timestamp
+        user_message_timestamp=user_message_timestamp,
+        message_type=message_type,
+        media_url=media_url,
+        media_summary=media_summary
     )
     session.add(new_turn)
     await session.commit()
@@ -49,3 +56,13 @@ async def get_recent_history(
     turns = result.scalars().all()
     
     return list(reversed(turns))
+
+async def update_chat_turn_media_summary(
+    session: AsyncSession, 
+    turn_id: uuid.UUID, 
+    summary: str
+):
+    """Updates an existing chat turn with a generated media summary."""
+    if turn := await session.get(ChatTurn, turn_id):
+        turn.media_summary = summary
+        await session.commit()

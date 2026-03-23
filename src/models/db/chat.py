@@ -17,6 +17,10 @@ class ChatTurn(Base):
     sender_id = Column(String(100), nullable=False)
     
     user_message = Column(Text, nullable=True)
+    message_type = Column(String(50), nullable=False, default="text")
+    media_url = Column(Text, nullable=True)
+    media_summary = Column(Text, nullable=True)
+
     user_message_timestamp = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     ai_response = Column(Text, nullable=False)
     timestamp = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
