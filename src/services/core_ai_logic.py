@@ -74,6 +74,8 @@ async def process_message(incoming_msg: IncomingMessage) -> OutgoingMessage:
         messages.append(types.Content(role="model", parts=[types.Part.from_text(text=turn.ai_response)]))
         
     # 1. Intercept Media and perform necessary conversions
+    original_text = incoming_msg.text  # Capture exactly what the user sent before we mutate it
+    
     media_bytes = None
     mime_type = "application/octet-stream"
 
@@ -214,7 +216,25 @@ async def process_message(incoming_msg: IncomingMessage) -> OutgoingMessage:
 
     # Background task: Sync interaction to the Core Platform for Dashboard & Billing
     # We safely extract the sender's ID whether the gateway sent a dictionary or a direct string
-    sender_id_str = str(incoming_msg.sender_info.get("username", incoming_msg.sender_info)) if isinstance(incoming_msg.sender_info, dict) else str(incoming_msg.sender_info)
+    if isinstance(incoming_msg.sender_info, dict):
+        # Safely extract Telegram's numeric ID or username, or WhatsApp's sender string
+        sender_id_str = str(incoming_msg.sender_info.get("id", incoming_msg.sender_info.get("username", incoming_msg.sender_info)))
+    else:
+        sender_id_str = str(incoming_msg.sender_info)
+        
+    # Map Orchestrator's internal message types to Core Platform's expected types
+    core_message_type = "text"
+    sync_user_text = original_text
+
+    if incoming_msg.message_type == MessageType.VOICE:
+        core_message_type = "audio"
+        sync_user_text = None
+    elif incoming_msg.message_type == MessageType.IMAGE:
+        core_message_type = "image"
+        sync_user_text = None
+    elif incoming_msg.message_type == MessageType.TEXT_AND_IMAGE:
+        core_message_type = "image"
+        sync_user_text = original_text
     
     sync_payload = {
         "company_id": config.company_id,
@@ -223,10 +243,10 @@ async def process_message(incoming_msg: IncomingMessage) -> OutgoingMessage:
         "sender_id": sender_id_str,
         "tokens_used": total_tokens_used,
         "user_message": {
-            "message_type": incoming_msg.message_type.value,
+            "message_type": core_message_type,
             "media_url": incoming_msg.media_url,
             "message_time": incoming_msg.timestamp.isoformat(),
-            "text": incoming_msg.text
+            "text": sync_user_text
         },
         "ai_response": {
             "message_type": "text",
