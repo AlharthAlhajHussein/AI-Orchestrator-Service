@@ -1,6 +1,8 @@
 
 import asyncio
 import uuid
+import httpx
+from datetime import datetime, timezone
 from google import genai
 from google.genai import types
 
@@ -23,12 +25,32 @@ async def background_summarize_image(turn_id: uuid.UUID, image_bytes: bytes, mim
         await update_chat_turn_media_summary(db_session, turn_id, summary)
     logger.info(f"[Background Task] Image summarization saved for turn {turn_id}.")
 
+async def sync_interaction_to_core(payload: dict):
+    """Fires a non-blocking HTTP request to sync the conversation data to the Core Platform."""
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            await client.post(
+                f"{settings.core_api_url}/internal/interactions/sync",
+                json=payload,
+                headers={"X-Internal-Secret": settings.core_api_key}
+            )
+    except Exception as e:
+        logger.error(f"[Sync Error] Failed to sync interaction to Core Platform: {e}")
 
 # --- Your Core Logic ---
 async def process_message(incoming_msg: IncomingMessage) -> OutgoingMessage:
     """The core orchestrator logic."""
-    logger.info(f"[Redis or Request] Getting agent config for {incoming_msg.destination_agent_id}")
-    config = await get_agent_config(incoming_msg.destination_agent_id)
+    try:
+        logger.info(f"[Redis or Request] Getting agent config for {incoming_msg.destination_agent_id}")
+        config = await get_agent_config(str(incoming_msg.destination_agent_id))
+    except ValueError as e:
+        logger.warning(f"[Agent Config Warning] {e} Aborting processing.")
+        return OutgoingMessage(
+            platform=incoming_msg.platform,
+            sender_info=incoming_msg.sender_info,
+            destination_agent_id=incoming_msg.destination_agent_id,
+            response_text="System Note: This AI agent is currently inactive or unavailable."
+        )
     
     logger.info(f"[DB] Getting recent history for {incoming_msg.destination_agent_id}")
     async with SessionLocal() as db_session:
@@ -101,6 +123,7 @@ async def process_message(incoming_msg: IncomingMessage) -> OutgoingMessage:
     gemini_client = genai.Client(api_key=settings.gemini_api_key)
     
     api_error = False
+    total_tokens_used = 0
     for attempt in range(max_loops):
         logger.info(f"[Gemini] Executing call (Attempt {attempt + 1}/{max_loops})...")
         
@@ -110,6 +133,10 @@ async def process_message(incoming_msg: IncomingMessage) -> OutgoingMessage:
                 contents=messages,
                 config=genai_config
             )
+            # Accumulate token usage for accurate SaaS Billing
+            if response.usage_metadata:
+                total_tokens_used += response.usage_metadata.total_token_count
+                
         except Exception as e:
             logger.error(f"[Gemini Error] API call failed on attempt {attempt+1}: {e}")
             if attempt == max_loops - 1:
@@ -184,6 +211,31 @@ async def process_message(incoming_msg: IncomingMessage) -> OutgoingMessage:
                 saved_turn.id, media_bytes, mime_type, config.system_prompt
             )
         )
+
+    # Background task: Sync interaction to the Core Platform for Dashboard & Billing
+    # We safely extract the sender's ID whether the gateway sent a dictionary or a direct string
+    sender_id_str = str(incoming_msg.sender_info.get("username", incoming_msg.sender_info)) if isinstance(incoming_msg.sender_info, dict) else str(incoming_msg.sender_info)
+    
+    sync_payload = {
+        "company_id": config.company_id,
+        "agent_id": incoming_msg.destination_agent_id,
+        "platform": incoming_msg.platform.value,
+        "sender_id": sender_id_str,
+        "tokens_used": total_tokens_used,
+        "user_message": {
+            "message_type": incoming_msg.message_type.value,
+            "media_url": incoming_msg.media_url,
+            "message_time": incoming_msg.timestamp.isoformat(),
+            "text": incoming_msg.text
+        },
+        "ai_response": {
+            "message_type": "text",
+            "media_url": None,
+            "message_time": datetime.now(timezone.utc).isoformat(),
+            "text": final_response_text
+        }
+    }
+    asyncio.create_task(sync_interaction_to_core(sync_payload))
 
     return OutgoingMessage(
         platform=incoming_msg.platform,
