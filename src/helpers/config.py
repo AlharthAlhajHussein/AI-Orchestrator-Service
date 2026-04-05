@@ -29,8 +29,7 @@ class Settings(BaseSettings):
     redis_port: int = 6379
     
     # API URLs to other services (CORE API, RAG API) 
-    core_api_url: str = "http://localhost:8003"
-    rag_api_url: str = "https://rag-engine-api-173690049028.europe-west4.run.app"
+    rag_api_url: str | None = None 
     
     # LLM settings
     gemini_api_key: Optional[str] = None
@@ -39,6 +38,10 @@ class Settings(BaseSettings):
     
     # Google Cloud settings
     gcp_project_id: str = "agents-platform-490417"
+    
+    # Core Platform API configuration
+    core_api_url: str | None = None
+    core_api_key: str | None = None
     
     class Config:
         env_file = ENV_PATH
