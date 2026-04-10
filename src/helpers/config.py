@@ -28,9 +28,6 @@ class Settings(BaseSettings):
     redis_host: str = "localhost"
     redis_port: int = 6379
     
-    # API URLs to other services (CORE API, RAG API) 
-    rag_api_url: str | None = None 
-    
     # LLM settings
     gemini_api_key: Optional[str] = None
     llm_max_rag_tool_retries: int = 3
@@ -39,9 +36,18 @@ class Settings(BaseSettings):
     # Google Cloud settings
     gcp_project_id: str = "agents-platform-490417"
     
-    # Core Platform API configuration
+    # API URLs to other services (CORE API, RAG API) 
+    rag_api_url: str | None = None 
+    
+    # Core API URL
     core_api_url: str | None = None
-    core_api_key: str | None = None
+    
+    # Internal Secret for service-to-service communication (must match the key expected by the other services)
+    internal_secret_between_services: str | None = None
+    
+    # GCP Pub/Sub Push Authentication
+    pubsub_audience: str | None = None
+    pubsub_invoker_email: str | None = None
     
     class Config:
         env_file = ENV_PATH
