@@ -33,7 +33,7 @@ async def get_agent_config(agent_id: str) -> AgentConfig:
             response = await client.get(
                 f"{settings.core_api_url}/internal/agents/config",
                 params={"agent_id": agent_id},
-                headers={"X-Internal-Secret": settings.core_api_key}
+                headers={"X-Internal-Secret": settings.internal_secret_between_services}
             )
             
             if response.status_code == 404:

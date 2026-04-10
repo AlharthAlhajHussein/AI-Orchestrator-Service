@@ -32,7 +32,7 @@ async def sync_interaction_to_core(payload: dict):
             await client.post(
                 f"{settings.core_api_url}/internal/interactions/sync",
                 json=payload,
-                headers={"X-Internal-Secret": settings.core_api_key}
+                headers={"X-Internal-Secret": settings.internal_secret_between_services}
             )
     except Exception as e:
         logger.error(f"[Sync Error] Failed to sync interaction to Core Platform: {e}")

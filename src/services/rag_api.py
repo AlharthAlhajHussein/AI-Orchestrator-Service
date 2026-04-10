@@ -15,7 +15,8 @@ async def search_company_knowledge_base(company_id: str, kb_id: str, query: str)
     # Make sure settings.rag_api_url is set to "http://127.0.0.1:5000" in your local Orchestrator .env
     rag_service_url = f"{settings.rag_api_url}/api/v1/search/{company_id}/{kb_id}"
     
-    # 2. EDGE CASE: Enforce strict timeouts. 
+    headers = {"X-Internal-Secret": settings.internal_secret_between_services}
+    # 2. EDGE CASE: Enforce strict timeouts. internal_secret_between_services
     # If the RAG DB is locked, we don't want the WhatsApp bot to hang forever.
     timeout = httpx.Timeout(20.0, connect=5.0)
     
@@ -24,9 +25,10 @@ async def search_company_knowledge_base(company_id: str, kb_id: str, query: str)
             # 3. Fire the request matching your SearchRequest schema
             response = await client.post(
                 rag_service_url, 
+                headers=headers,
                 json={
                     "query": query, 
-                    "top_k": 2  # Give the LLM the top 2 most relevant paragraphs
+                    "top_k": 5  # Give the LLM the top 2 most relevant paragraphs
                 }
             )
             

@@ -1,18 +1,20 @@
 import base64
 import json
-from fastapi import APIRouter, HTTPException, Response
+from fastapi import APIRouter, HTTPException, Response, Depends
 from pydantic import ValidationError
 from models.in_out_messages import IncomingMessage
 from services.core_ai_logic import process_message
 from routers.schems.pubsub import PubSubPushRequest
 from services.pubsub_service import publish_outgoing_message
+from routers.dependencies import verify_internal_secret
 import logging 
 
 logger = logging.getLogger("uvicorn.error")
 
 pubsub_router = APIRouter(
     prefix="/pubsub", 
-    tags=["Pub/Sub"]
+    tags=["Pub/Sub"],
+    dependencies=[Depends(verify_internal_secret)]
 )
 
 @pubsub_router.post("/push")
