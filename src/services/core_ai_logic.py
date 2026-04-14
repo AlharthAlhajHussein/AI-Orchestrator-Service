@@ -218,7 +218,7 @@ async def process_message(incoming_msg: IncomingMessage) -> OutgoingMessage:
     # We safely extract the sender's ID whether the gateway sent a dictionary or a direct string
     if isinstance(incoming_msg.sender_info, dict):
         # Safely extract Telegram's numeric ID or username, or WhatsApp's sender string
-        sender_id_str = str(incoming_msg.sender_info.get("id", incoming_msg.sender_info.get("username", incoming_msg.sender_info)))
+        sender_id_str = str(incoming_msg.sender_info.get("username", incoming_msg.sender_info.get("id", incoming_msg.sender_info)))
     else:
         sender_id_str = str(incoming_msg.sender_info)
         
